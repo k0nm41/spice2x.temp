@@ -7,6 +7,7 @@
 
 namespace execexe {
     HMODULE init();
+    bool is_initialized();
     void init_deferred(std::function<void()> init_func);
     void init_port_hook(const std::wstring &portName, acioemu::ACIOHandle *acioHandle);
     HMODULE load_library(const char *module_name, bool fatal = true);

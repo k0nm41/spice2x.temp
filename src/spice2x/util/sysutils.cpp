@@ -627,7 +627,7 @@ namespace sysutils {
         return elevation.TokenIsElevated != 0;
     }
 
-    bool relaunch_as_admin() {
+    bool relaunch_as_admin(bool hidden) {
         // get the current executable path
         wchar_t executable_path[MAX_PATH];
         if (!GetModuleFileNameW(nullptr, executable_path, MAX_PATH)) {
@@ -650,7 +650,7 @@ namespace sysutils {
             executable_path,
             args,
             working_dir,
-            SW_SHOW
+            hidden ? SW_HIDE : SW_SHOW
         );
 
         // ShellExecute returns > 32 on success

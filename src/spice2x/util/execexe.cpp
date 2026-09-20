@@ -206,6 +206,10 @@ namespace execexe {
         return nullptr;
     }
 
+    bool is_initialized() {
+        return execexe_module != nullptr;
+    }
+
     HMODULE get_module(const char *module_name, bool fatal) {
         std::wstring module_name_w = s2ws(module_name);
         std::wstring plugin_path = plugins_dir + module_name_w;

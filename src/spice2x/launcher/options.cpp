@@ -217,6 +217,16 @@ static const std::vector<OptionDefinition> OPTION_DEFINITIONS = std::invoke([]()
         .category = "Windowed Settings",
         .quick_setting_category = "Display",
     };
+    c[launcher::Options::WindowBackground] = {
+        .title = "Keep Game Window In Background",
+        .name = "wbg",
+        .desc = "Stops the game from raising its own window or taking keyboard focus. "
+            "Use it when the game shares the desktop with other work. "
+            "Clicking the window still brings it to the front.",
+        .type = OptionType::Bool,
+        .category = "Windowed Settings",
+        .quick_setting_category = "Display",
+    };
     c[launcher::Options::InjectHook] = {
         .title = "Inject DLL Hooks",
         .name = "k",

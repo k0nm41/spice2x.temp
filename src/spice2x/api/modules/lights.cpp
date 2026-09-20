@@ -21,6 +21,10 @@ namespace api::modules {
         functions["write_reset"] = std::bind(&Lights::write_reset, this, _1, _2);
 
         this->lights = games::get_lights(eamuse_get_game());
+        if (this->lights == nullptr) {
+            return;
+        }
+
         for (auto &light : *this->lights) {
             this->lights_by_names.emplace(light.getName(), light);
         }

@@ -30,7 +30,7 @@ namespace sysutils {
 #if !SPICE_XP
 
     bool is_running_as_admin();
-    bool relaunch_as_admin();
+    bool relaunch_as_admin(bool hidden);
 
 #endif // !SPICE_XP
 }

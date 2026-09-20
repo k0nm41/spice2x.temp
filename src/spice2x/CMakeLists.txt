@@ -382,6 +382,7 @@ set(SOURCE_FILES ${SOURCE_FILES}
         api/modules/analogs.cpp
         api/modules/lights.cpp
         api/modules/memory.cpp
+        api/modules/mouse.cpp
         api/modules/coin.cpp
         api/modules/info.cpp
         api/modules/keypads.cpp
@@ -643,12 +644,14 @@ set(SOURCE_FILES ${SOURCE_FILES}
         misc/clipboard.cpp
         misc/device.cpp
         misc/eamuse.cpp
+        misc/mouseoverride.cpp
         misc/extdev.cpp
         misc/hotkeys.cpp
         misc/sciunit.cpp
         misc/sde.cpp
         misc/wintouchemu.cpp
         misc/ami2000.cpp
+        misc/backgroundwindow.cpp
 
         # nvapi
         nvapi/nvapi.cpp

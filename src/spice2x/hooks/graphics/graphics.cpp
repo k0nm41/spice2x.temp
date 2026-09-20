@@ -1363,6 +1363,8 @@ void graphics_init() {
 }
 
 void graphics_hook_window(HWND hWnd, D3DPRESENT_PARAMETERS *pPresentationParameters) {
+    graphics_note_game_window(hWnd);
+
 
     // update window size for a few games
     // TODO: make this work on everything
@@ -1472,6 +1474,26 @@ void graphics_screens_unregister(int screen) {
     std::lock_guard<std::mutex> lock(GRAPHICS_SCREENS_M);
 
     GRAPHICS_SCREENS.erase(screen);
+}
+
+static std::atomic<HWND> GRAPHICS_GAME_WINDOW { nullptr };
+
+void graphics_note_game_window(HWND hWnd) {
+    if (hWnd == nullptr) {
+        return;
+    }
+
+    HWND expected = nullptr;
+    GRAPHICS_GAME_WINDOW.compare_exchange_strong(expected, hWnd);
+}
+
+HWND graphics_game_window() {
+    auto known = GRAPHICS_GAME_WINDOW.load();
+    if (known != nullptr) {
+        return known;
+    }
+
+    return GRAPHICS_WINDOWS.empty() ? nullptr : GRAPHICS_WINDOWS.front();
 }
 
 void graphics_screens_get(std::vector<int> &screens) {

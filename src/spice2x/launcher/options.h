@@ -332,6 +332,7 @@ namespace launcher {
             OBSWebSocketDebug,
             ScreenshotIncludeOverlay,
             ScreenshotSubscreens,
+            WindowBackground,
 
             _Count,
         };

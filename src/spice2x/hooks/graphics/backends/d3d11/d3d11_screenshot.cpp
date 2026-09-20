@@ -6,6 +6,7 @@
 
 #ifdef SPICE_D3D11
 
+#include <memory>
 #include <vector>
 
 #include <windows.h>
@@ -23,6 +24,10 @@
 using d3d11_hooks::com_ptr;
 
 namespace {
+
+constexpr int API_CAPTURE_SCREEN = 0;
+constexpr size_t RGB_CHANNELS = 3;
+constexpr size_t RGBA_CHANNELS = 4;
 
 // copy the swapchain backbuffer into a CPU-readable staging texture and
 // flatten it into an RGBA8 buffer (BGRA backbuffers are swizzled,
@@ -111,6 +116,55 @@ bool copy_backbuffer_to_rgba(IDXGISwapChain *swapchain,
 } // namespace
 
 namespace d3d11_hooks {
+
+void try_api_capture(IDXGISwapChain *swapchain) {
+    int screen = 0;
+    if (!graphics_capture_consume(&screen)) {
+        return;
+    }
+
+    if (screen != API_CAPTURE_SCREEN || !swapchain) {
+        graphics_capture_skip(screen);
+        return;
+    }
+
+    ID3D11Device *raw_device = nullptr;
+    if (FAILED(swapchain->GetDevice(IID_PPV_ARGS(&raw_device))) || !raw_device) {
+        graphics_capture_skip(screen);
+        return;
+    }
+    com_ptr<ID3D11Device> device(raw_device);
+    ID3D11DeviceContext *raw_ctx = nullptr;
+    device->GetImmediateContext(&raw_ctx);
+    if (!raw_ctx) {
+        graphics_capture_skip(screen);
+        return;
+    }
+    com_ptr<ID3D11DeviceContext> context(raw_ctx);
+
+    std::vector<uint8_t> rgba;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    if (!copy_backbuffer_to_rgba(swapchain, device.get(), context.get(), rgba, width, height)) {
+        graphics_capture_skip(screen);
+        return;
+    }
+
+    const size_t pixel_count = static_cast<size_t>(width) * height;
+    auto pixels = std::unique_ptr<uint8_t[]>(new (std::nothrow) uint8_t[pixel_count * RGB_CHANNELS]);
+    if (!pixels) {
+        graphics_capture_skip(screen);
+        return;
+    }
+
+    for (size_t pixel = 0; pixel < pixel_count; pixel++) {
+        pixels[pixel * RGB_CHANNELS + 0] = rgba[pixel * RGBA_CHANNELS + 0];
+        pixels[pixel * RGB_CHANNELS + 1] = rgba[pixel * RGBA_CHANNELS + 1];
+        pixels[pixel * RGB_CHANNELS + 2] = rgba[pixel * RGBA_CHANNELS + 2];
+    }
+
+    graphics_capture_enqueue(screen, pixels.release(), width, height);
+}
 
 void try_screenshot(IDXGISwapChain *swapchain) {
     if (!swapchain || !graphics_screenshot_consume()) {

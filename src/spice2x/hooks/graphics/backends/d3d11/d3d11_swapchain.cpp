@@ -177,6 +177,8 @@ void pump_frame(IDXGISwapChain *swapchain) {
 
     graphics_poll_screenshot_hotkey();
 
+    d3d11_hooks::try_api_capture(swapchain);
+
     // before the overlay render so the screenshot excludes it
     if (!GRAPHICS_SCREENSHOT_INCLUDE_OVERLAY) {
         d3d11_hooks::try_screenshot(swapchain);
@@ -297,6 +299,7 @@ void note_main_hwnd(HWND hwnd) {
     }
     HWND expected = nullptr;
     if (g_main_hwnd.compare_exchange_strong(expected, hwnd)) {
+        graphics_note_game_window(hwnd);
         log_info("graphics::d3d11", "main hwnd recorded: 0x{:x}",
             (uintptr_t) hwnd);
     }

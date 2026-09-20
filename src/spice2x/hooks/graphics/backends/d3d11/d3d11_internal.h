@@ -31,6 +31,7 @@ namespace d3d11_hooks {
 
     // capture backbuffer to PNG if a screenshot was requested.
     void try_screenshot(IDXGISwapChain *swapchain);
+    void try_api_capture(IDXGISwapChain *swapchain);
 
     // trampoline a virtual method by vtable index. on failure *orig is null.
     inline bool hook_vtbl(void *iface, size_t index,

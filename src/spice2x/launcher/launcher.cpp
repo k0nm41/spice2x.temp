@@ -102,6 +102,7 @@
 #include "misc/ami2000.h"
 #include "misc/sciunit.h"
 #include "misc/sde.h"
+#include "misc/backgroundwindow.h"
 #include "misc/wintouchemu.h"
 #include "overlay/overlay.h"
 #include "overlay/notifications.h"
@@ -277,6 +278,11 @@ int main_implementation(int argc, char *argv[]) {
     // parse arguments
     LAUNCHER_OPTIONS = launcher::parse_options(argc, argv);
 
+    if (LAUNCHER_OPTIONS->at(launcher::Options::WindowBackground).value_bool()) {
+        backgroundwindow::ENABLED = true;
+        backgroundwindow::hide_console();
+    }
+
     // command line override (must be done before merging options with cfg)
     if (LAUNCHER_OPTIONS->at(launcher::Options::OptionConflictResolution).value_bool()) {
         launcher::USE_CMD_OVERRIDE = true;
@@ -325,7 +331,7 @@ int main_implementation(int argc, char *argv[]) {
             options[launcher::Options::AutoElevate].value_text() == "user";
         if (!skip_elevation && !sysutils::is_running_as_admin()) {
             log_info("launcher", "relaunching with administrator privileges");
-            if (sysutils::relaunch_as_admin()) {
+            if (sysutils::relaunch_as_admin(backgroundwindow::ENABLED)) {
                 exit(0);
             } else {
                 // elevation failed or was denied by the user
@@ -405,6 +411,10 @@ int main_implementation(int argc, char *argv[]) {
     }
     if (options[launcher::Options::ShowCursor].value_bool()) {
         GRAPHICS_SHOW_CURSOR = true;
+    }
+    if (options[launcher::Options::WindowBackground].value_bool()) {
+        backgroundwindow::ENABLED = true;
+        backgroundwindow::hide_console();
     }
     if (options[launcher::Options::VerboseGraphicsLogging].value_bool()) {
         GRAPHICS_LOG_HRESULT = true;
@@ -2691,6 +2701,8 @@ int main_implementation(int argc, char *argv[]) {
 
     // D3D9 hook
     graphics_init();
+
+    backgroundwindow::hook();
 
     // debug hook
     debughook::attach();
