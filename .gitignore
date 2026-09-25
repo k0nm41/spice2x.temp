@@ -11,3 +11,8 @@ cmake-build*
 # user config
 build_all.local.sh
 build_docker.local.sh
+
+# Build output (docker build script + ccache)
+.ccache/
+bin/
+dist/

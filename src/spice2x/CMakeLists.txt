@@ -623,6 +623,7 @@ set(SOURCE_FILES ${SOURCE_FILES}
         hooks/icmphook_iphlpapi.cpp
         hooks/nicspoof.cpp
         hooks/nicspoof_tunnel.cpp
+        hooks/netredirect.cpp
         hooks/powrprof.cpp
         #hooks/rom.cpp
         hooks/setupapihook.cpp
@@ -652,6 +653,7 @@ set(SOURCE_FILES ${SOURCE_FILES}
         misc/wintouchemu.cpp
         misc/ami2000.cpp
         misc/backgroundwindow.cpp
+        misc/monodebug.cpp
 
         # nvapi
         nvapi/nvapi.cpp

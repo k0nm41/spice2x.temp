@@ -86,6 +86,7 @@
 #include "hooks/lang.h"
 #include "hooks/networkhook.h"
 #include "hooks/icmphook_net.h"
+#include "hooks/netredirect.h"
 #include "hooks/nicspoof.h"
 #include "hooks/unisintrhook.h"
 #include "launcher/launcher.h"
@@ -2640,6 +2641,11 @@ int main_implementation(int argc, char *argv[]) {
     // ICMP emulation (opt-in; after tunnel so hooks do not collide)
     if (icmphook_enable) {
         icmphook_net_init();
+    }
+
+    if (options[launcher::Options::NetRedirect].is_active()
+            && netredirect_configure(options[launcher::Options::NetRedirect].value_text())) {
+        netredirect_init();
     }
 
     // net fix

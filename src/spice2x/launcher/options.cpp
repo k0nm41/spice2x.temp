@@ -227,6 +227,15 @@ static const std::vector<OptionDefinition> OPTION_DEFINITIONS = std::invoke([]()
         .category = "Windowed Settings",
         .quick_setting_category = "Display",
     };
+    c[launcher::Options::NetRedirect] = {
+        .title = "Redirect TCP Connections",
+        .name = "netredirect",
+        .desc = "Sends the game's TCP connections for one IPv4 endpoint to another, "
+            "written as ip:port=ip:port. Used to put a fault injecting proxy between the game and its server.",
+        .type = OptionType::Text,
+        .setting_name = "127.0.0.1:9550=127.0.0.1:9560",
+        .category = "Network Dev",
+    };
     c[launcher::Options::InjectHook] = {
         .title = "Inject DLL Hooks",
         .name = "k",

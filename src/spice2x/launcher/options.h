@@ -333,6 +333,7 @@ namespace launcher {
             ScreenshotIncludeOverlay,
             ScreenshotSubscreens,
             WindowBackground,
+            NetRedirect,
 
             _Count,
         };

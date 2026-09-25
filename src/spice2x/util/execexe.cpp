@@ -6,6 +6,7 @@
 #include "util/logging.h"
 #include "util/libutils.h"
 #include "util/utils.h"
+#include "misc/monodebug.h"
 #include "util/detour.h"
 
 namespace execexe {
@@ -62,6 +63,8 @@ namespace execexe {
     static HANDLE WINAPI execexe_CreateFileW_hook(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
                                                   LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
                                                   DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+        monodebug::poll();
+
         if (lpFileName == port_name && acio->open(lpFileName)) {
             if (!port_opened) {
                 port_opened = acio->open(port_name.c_str());

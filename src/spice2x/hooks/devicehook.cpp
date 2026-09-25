@@ -2,9 +2,14 @@
 
 #include <vector>
 
+#include <filesystem>
+
 #include "avs/game.h"
 #include "games/gitadora/gitadora.h"
 #include "util/detour.h"
+#include "misc/monodebug.h"
+#include "util/libutils.h"
+#include "util/logging.h"
 #include "util/utils.h"
 
 #include <tlhelp32.h>
@@ -20,6 +25,61 @@ namespace hooks::device {
 
 bool DEVICE_CREATEFILE_DEBUG = false;
 static std::string PATH_HARD_CODE_COMPARE = "d:/###-###/contents";
+
+static std::wstring UNITY_DATA_ASKED;
+static std::wstring UNITY_DATA_REAL;
+
+static std::wstring normalized_separators(const std::wstring &path) {
+    std::wstring result = path;
+    for (auto &c : result) {
+        if (c == L'/') {
+            c = L'\\';
+        }
+    }
+    return result;
+}
+
+static std::wstring unity_data_redirect(const std::wstring &path) {
+    if (UNITY_DATA_ASKED.empty() || path.size() < UNITY_DATA_ASKED.size()) {
+        return L"";
+    }
+
+    const auto normalized = normalized_separators(path);
+    if (_wcsnicmp(normalized.c_str(), UNITY_DATA_ASKED.c_str(), UNITY_DATA_ASKED.size()) != 0) {
+        return L"";
+    }
+
+    return UNITY_DATA_REAL + normalized.substr(UNITY_DATA_ASKED.size());
+}
+
+static void unity_data_redirect_init() {
+    static bool resolved = false;
+    if (resolved) {
+        return;
+    }
+    resolved = true;
+
+    const auto self = libutils::module_file_name(nullptr);
+    const auto asked = self.parent_path() / (self.stem().wstring() + L"_Data");
+    if (std::filesystem::exists(asked)) {
+        return;
+    }
+
+    std::error_code error;
+    for (const auto &entry : std::filesystem::directory_iterator("game", error)) {
+        if (!entry.is_directory()) {
+            continue;
+        }
+        const auto name = entry.path().filename().wstring();
+        if (name.size() > 5 && name.compare(name.size() - 5, 5, L"_Data") == 0) {
+            UNITY_DATA_ASKED = normalized_separators(asked.wstring());
+            UNITY_DATA_REAL = normalized_separators(std::filesystem::absolute(entry.path()).wstring());
+            log_info("devicehook", "redirecting {} to {}",
+                     ws2s(UNITY_DATA_ASKED), ws2s(UNITY_DATA_REAL));
+            return;
+        }
+    }
+}
 
 static decltype(ClearCommBreak) *ClearCommBreak_orig = nullptr;
 static decltype(ClearCommError) *ClearCommError_orig = nullptr;
@@ -211,6 +271,12 @@ static HANDLE WINAPI CreateFileA_hook(LPCSTR lpFileName, DWORD dwDesiredAccess, 
 
     // fallback
     if (result == INVALID_HANDLE_VALUE) {
+        const auto redirected = unity_data_redirect(s2ws(lpFileName));
+        if (!redirected.empty()) {
+            return CreateFileW_orig(redirected.c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+                                    dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+        }
+
         result = CreateFileA_orig(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
                                   dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
     }
@@ -223,6 +289,8 @@ static HANDLE WINAPI CreateFileW_hook(LPCWSTR lpFileName, DWORD dwDesiredAccess,
                                       LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
                                       DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
+    monodebug::poll();
+
     HANDLE result = INVALID_HANDLE_VALUE;
 
     // debug
@@ -277,6 +345,12 @@ static HANDLE WINAPI CreateFileW_hook(LPCWSTR lpFileName, DWORD dwDesiredAccess,
 
     // fallback
     if (result == INVALID_HANDLE_VALUE) {
+        const auto redirected = unity_data_redirect(lpFileName);
+        if (!redirected.empty()) {
+            return CreateFileW_orig(redirected.c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+                                    dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+        }
+
         result = CreateFileW_orig(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
                                   dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
     }
@@ -562,6 +636,8 @@ void devicehook_init(HMODULE module) {
 
     log_info("devicehook", "init");
 
+    unity_data_redirect_init();
+
     suspend_or_resume_other_threads(true);
 
     // IAT hooks
@@ -600,6 +676,8 @@ void devicehook_init_trampoline() {
         initialized = true;
     }
 
+    unity_data_redirect_init();
+
     suspend_or_resume_other_threads(true);
 
     detour::trampoline_try("kernel32.dll", "ClearCommBreak", ClearCommBreak_hook, &ClearCommBreak_orig);
@@ -624,6 +702,8 @@ void devicehook_init_trampoline() {
     detour::trampoline_try("kernel32.dll", "SetCommTimeouts", SetCommTimeouts_hook, &SetCommTimeouts_orig);
 
     suspend_or_resume_other_threads(false);
+
+    monodebug::init();
 }
 
 void devicehook_add(CustomHandle *device_handle) {

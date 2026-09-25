@@ -160,7 +160,11 @@ namespace hooks::audio {
         hooks::audio::acm::init();
 
         // general hooks
-        CoCreateInstance_orig = detour::iat_try("CoCreateInstance", CoCreateInstance_hook);
+        if (!detour::trampoline_try(
+                "ole32.dll", "CoCreateInstance", CoCreateInstance_hook, &CoCreateInstance_orig)) {
+            log_warning("audio", "could not trampoline CoCreateInstance, falling back to imports");
+            CoCreateInstance_orig = detour::iat_try("CoCreateInstance", CoCreateInstance_hook);
+        }
         if (avs::game::is_model("PAN")) {
             hooks::audio::xact::init();
         }
